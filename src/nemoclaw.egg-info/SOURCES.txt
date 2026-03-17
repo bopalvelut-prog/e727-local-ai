@@ -1,0 +1,12 @@
+LICENSE
+README.md
+pyproject.toml
+src/config.py
+src/coordinator.py
+src/worker.py
+src/nemoclaw.egg-info/PKG-INFO
+src/nemoclaw.egg-info/SOURCES.txt
+src/nemoclaw.egg-info/dependency_links.txt
+src/nemoclaw.egg-info/requires.txt
+src/nemoclaw.egg-info/top_level.txt
+tests/test_coordinator.py

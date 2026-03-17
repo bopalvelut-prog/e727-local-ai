@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  coordinator:
+    build: .
+    command: python -m src.coordinator
+    ports:
+      - "10000:10000"
+      - "10001:10001/udp"
+    env_file: .env
+    restart: always
+
+  worker:
+    build: .
+    command: python -m src.worker
+    depends_on:
+      - coordinator
+    env_file: .env
+    volumes:
+      - /home/m/prima.cpp/models:/models:ro
+    environment:
+      - WORKER_MODEL_PATH=/models/qwen2.5-1.5b-instruct-q4_k_m.gguf
+    restart: always
