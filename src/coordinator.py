@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
     thread.start()
     yield
 
-app = FastAPI(title="NemoClaw Coordinator & Gateway", lifespan=lifespan)
+app = FastAPI(title="Primaclaw Coordinator & Gateway", lifespan=lifespan)
 
 # --- OpenAI Proxy Gateway ---
 

@@ -1,27 +1,27 @@
-# NemoClaw 🤖🌊
+# Primaclaw 🤖🐚🌊
 
 ```
-  _   _  ____  __  __  ___   ____ _               
- | \ | |/ __ \|  \/  |/ _ \ / ___| | __ ___      __
- |  \| |  __| | |\/| | | | | |   | |/ _` \ \ /\ / /
- | |\  | |___ | |  | | |_| | |___| | (_| |\ V  V / 
- |_| \_|\____||_|  |_|\___/ \____|_|\__,_| \_/\_/  
+  ____  ____  ___ __  __   _    ____ _        _ __        __
+ |  _ \|  _ \|_ _|  \/  | / \  / ___| |      / \\ \      / /
+ | |_) | |_) || || |\/| |/ _ \| |   | |     / _ \\ \ /\ / / 
+ |  __/|  _ < | || |  | / ___ \ |___| |___ / ___ \\ V  V /  
+ |_|   |_| \_\___|_|  |_/_/   \_\____|_____/_/   \_\\_/\_/   
                                     v1.0 (Swarm Edition)
 ```
 
 > **"Don't throw away your old laptop. Make it part of the Swarm."**
 
 **Turn your e-waste into a distributed AI cluster.**  
-NemoClaw connects your dusty laptops, Raspberry Pis, and old desktops into a single, unified AI entity capable of running modern LLMs like **Qwen2.5-1.5B** or even **70B models** (via `prima.cpp`).
+Primaclaw connects your dusty laptops, Raspberry Pis, and old desktops into a single, unified AI entity capable of running modern LLMs like **Qwen2.5-1.5B** or even **70B models** (via `prima.cpp`).
 
 ---
 
 ## 🚀 The Mission
 
 Most AI projects require $10,000 GPUs.  
-**NemoClaw requires a 2009 Pentium and a dream.**
+**Primaclaw requires a 2009 Pentium and a dream.**
 
-We built this to prove that decentralized, low-resource AI is possible. By using a **Coordinator-Worker** architecture, NemoClaw lets devices "discover" each other on your home network and share the workload.
+We built this to prove that decentralized, low-resource AI is possible. By using a **Coordinator-Worker** architecture, Primaclaw lets devices "discover" each other on your home network and share the workload.
 
 - **♻️ Zero Waste:** Give new life to old hardware.
 - **🔋 Low Power:** Optimized for efficiency (145MB RAM usage on idle).
@@ -41,8 +41,8 @@ curl -sL https://raw.githubusercontent.com/bopalvelut-prog/e727-local-ai/main/in
 ### Manual Install
 1. **Clone & Setup:**
    ```bash
-   git clone https://github.com/bopalvelut-prog/e727-local-ai.git nemoclaw
-   cd nemoclaw
+   git clone https://github.com/bopalvelut-prog/e727-local-ai.git primaclaw
+   cd primaclaw
    python3 -m venv venv && source venv/bin/activate
    pip install .
    ```
@@ -77,7 +77,7 @@ curl -sL https://raw.githubusercontent.com/bopalvelut-prog/e727-local-ai/main/in
 
 ## 🌍 Finnish / Suomeksi
 
-**NemoClaw** on Business Oulun (bopalvelut-prog) periaatteita noudattava projekti, joka muuttaa vanhat tietokoneet hajautetuksi tekoälyparveksi.
+**Primaclaw** on Business Oulun (bopalvelut-prog) periaatteita noudattava projekti, joka muuttaa vanhat tietokoneet hajautetuksi tekoälyparveksi.
 
 - **Tavoite:** Vähentää elektroniikkajätettä ja demokratisoida tekoäly.
 - **Teknologia:** Perustuu `prima.cpp`-kirjastoon, joka mahdollistaa LLM-mallien ajamisen kuluttajalaitteilla.

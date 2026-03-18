@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# 🤖 NemoClaw: One-Click Installer
+# 🤖 Primaclaw: One-Click Installer
 # Turns your old hardware into an AI Swarm Node.
 
 set -e
 
-echo "🌊 NemoClaw Installer"
+echo "🐚 Primaclaw Installer"
 echo "---------------------"
 
 # Check for Python 3.10+
@@ -16,10 +16,11 @@ fi
 
 # Clone if not already in repo
 if [ ! -d "src" ]; then
-    echo "📦 Cloning NemoClaw..."
-    git clone https://github.com/bopalvelut-prog/e727-local-ai.git nemoclaw
-    cd nemoclaw
+    echo "📦 Cloning Primaclaw..."
+    git clone https://github.com/bopalvelut-prog/e727-local-ai.git primaclaw
+    cd primaclaw
 fi
+
 
 # Setup Virtual Environment
 echo "🐍 Setting up Python Environment..."

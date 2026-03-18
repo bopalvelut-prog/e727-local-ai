@@ -1,4 +1,4 @@
-# Contributing to NemoClaw
+# Contributing to Primaclaw
 
 We welcome contributions! Please follow these guidelines to ensure a smooth collaboration.
 

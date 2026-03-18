@@ -1,5 +1,5 @@
 [project]
-name = "nemoclaw"
+name = "primaclaw"
 version = "0.1.0"
 description = "Distributed AI Swarm Management for Low-Resource Home Clusters."
 authors = [{ name = "bopalvelut-prog developers" }]
