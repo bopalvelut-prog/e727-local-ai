@@ -4,6 +4,13 @@ import httpx
 import sys
 from src.config import settings
 
+def get_recommendation(tokens_per_sec):
+    """Suggests higher or lower quantization based on speed threshold."""
+    if tokens_per_sec < 5:
+        return "Slow (<5t/s). Try lower quantization (e.g., q3_K or q2_K)"
+    else:
+        return "Fast (>=5t/s). Try higher quantization (e.g., q6_K or q8_0) for better quality"
+
 def benchmark_swarm(prompt: str):
     """Benchmarks the current Primaclaw swarm via the Coordinator."""
     url = f"http://localhost:{settings.COORDINATOR_PORT}/v1/chat/completions"
@@ -55,10 +62,13 @@ def benchmark_swarm(prompt: str):
         except ValueError:
             print("Invalid input. Please enter a number.")
 
+    recommendation = get_recommendation(tokens_per_sec)
+
     print("\n--- Efficiency Report ---")
     print(f"{'Target':<20} {'Tokens/Sec':<12} {'Quality':<8} {'Status':<10}")
     print("-" * 50)
     print(f"{'Primaclaw Swarm':<20} {tokens_per_sec:<12.2f} {score:<8} {'PASS':<10}")
+    print(f"\n💡 Recommendation: {recommendation}")
     print("\n✅ Benchmark complete.")
 
 if __name__ == "__main__":
