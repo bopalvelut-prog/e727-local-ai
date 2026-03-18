@@ -4,12 +4,26 @@ import httpx
 import sys
 from src.config import settings
 
+def pull_model(model_name):
+    """Pulls a model via the Coordinator (if supported) or Ollama directly."""
+    # Assuming Ollama is local for the benchmark
+    print(f"\n📥 Pulling {model_name} via Ollama...")
+    try:
+        url = "http://localhost:11434/api/pull"
+        response = httpx.post(url, json={"name": model_name, "stream": False}, timeout=None)
+        response.raise_for_status()
+        print(f"✅ Successfully pulled {model_name}")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to pull {model_name}: {e}")
+        return False
+
 def get_recommendation(tokens_per_sec):
     """Suggests higher or lower quantization based on speed threshold."""
     if tokens_per_sec < 5:
-        return "Slow (<5t/s). Try lower quantization (e.g., q3_K or q2_K)"
+        return "Slow (<5t/s). Try lower quantization (e.g., q3_K or q2_K)", "q3_K_M"
     else:
-        return "Fast (>=5t/s). Try higher quantization (e.g., q6_K or q8_0) for better quality"
+        return "Fast (>=5t/s). Try higher quantization (e.g., q6_K or q8_0) for better quality", "q8_0"
 
 def benchmark_swarm(prompt: str):
     """Benchmarks the current Primaclaw swarm via the Coordinator."""
@@ -62,14 +76,21 @@ def benchmark_swarm(prompt: str):
         except ValueError:
             print("Invalid input. Please enter a number.")
 
-    recommendation = get_recommendation(tokens_per_sec)
+    recommendation_text, suggested_tag = get_recommendation(tokens_per_sec)
 
     print("\n--- Efficiency Report ---")
     print(f"{'Target':<20} {'Tokens/Sec':<12} {'Quality':<8} {'Status':<10}")
     print("-" * 50)
     print(f"{'Primaclaw Swarm':<20} {tokens_per_sec:<12.2f} {score:<8} {'PASS':<10}")
-    print(f"\n💡 Recommendation: {recommendation}")
+    print(f"\n💡 Recommendation: {recommendation_text}")
     print("\n✅ Benchmark complete.")
+
+    if suggested_tag:
+        ans = input(f"\n📥 Do you want to pull a {suggested_tag} version of your model via Ollama? (y/n): ")
+        if ans.lower() == "y":
+            model_base = input("Enter base model name (e.g. llama3.2): ")
+            if model_base:
+                pull_model(f"{model_base}:{suggested_tag}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Primaclaw Swarm Efficiency Benchmark")
