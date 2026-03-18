@@ -59,9 +59,9 @@ MODELS_DB = {
         }
     },
     "deepseek-r1-1.5b": {
-        "repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
+        "repo": "lmstudio-community/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
         "quants": {
-            "Q2_K": {"suffix": "DeepSeek-R1-Distill-Qwen-1.5B-Q2_K.gguf", "size_gb": 0.6, "quality": 0.7},
+            "Q2_K": {"suffix": "DeepSeek-R1-Distill-Qwen-1.5B-Q3_K_L.gguf", "size_gb": 0.6, "quality": 0.7},
             "Q4_K_M": {"suffix": "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf", "size_gb": 0.9, "quality": 0.9},
         }
     },
