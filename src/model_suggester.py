@@ -10,6 +10,15 @@ import subprocess
 import os
 
 MODELS_DB = {
+    "qwen2.5-0.5b": {
+        "repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+        "quants": {
+            "Q2_K": {"suffix": "qwen2.5-0.5b-instruct-q2_k.gguf", "size_gb": 0.4, "quality": 0.7},
+            "Q3_K_M": {"suffix": "qwen2.5-0.5b-instruct-q3_k_m.gguf", "size_gb": 0.5, "quality": 0.8},
+            "Q4_K_M": {"suffix": "qwen2.5-0.5b-instruct-q4_k_m.gguf", "size_gb": 0.5, "quality": 0.9},
+            "Q8_0": {"suffix": "qwen2.5-0.5b-instruct-q8_0.gguf", "size_gb": 0.6, "quality": 1.0},
+        }
+    },
     "qwen2.5-1.5b": {
         "repo": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
         "quants": {
@@ -86,7 +95,7 @@ DOWNLOAD_DIR = os.path.expanduser("~/Lataukset")
 
 
 def list_models():
-    print("\n Available Models (prima.cpp supported):\n")
+    print("\nAvailable Models (prima.cpp supported):\n")
     print(f"{'Model':<25} {'Quant':<10} {'Size':<10} {'Quality':<10}")
     print("-" * 55)
     for model_key, info in MODELS_DB.items():
@@ -98,7 +107,7 @@ def list_models():
 
 
 def suggest_model(target_size_gb=None, target_quality=0.9):
-    print(f"\n Suggestions (prima.cpp supported, target: {'any size' if not target_size_gb else f'<{target_size_gb}GB'}, quality >={target_quality:.0%}):\n")
+    print(f"\nSuggestions (target: {'any' if not target_size_gb else f'<{target_size_gb}GB'}, quality >={target_quality:.0%}):\n")
     matches = []
     for model_key, info in MODELS_DB.items():
         for quant, qinfo in info["quants"].items():
@@ -120,37 +129,32 @@ def download_model(repo, filename, download_dir=DOWNLOAD_DIR):
     url = f"https://huggingface.co/{repo}/resolve/main/{filename}"
     output_path = os.path.join(download_dir, filename)
     if os.path.exists(output_path):
-        print(f" Model already exists: {output_path}")
+        print(f"Model already exists: {output_path}")
         return output_path
-    print(f"\n Downloading {filename}...")
+    print(f"\nDownloading {filename}...")
     try:
         result = subprocess.run(["wget", "-O", output_path, url], capture_output=True, text=True)
         if result.returncode == 0:
-            print(f" Downloaded: {output_path}")
+            print(f"Downloaded: {output_path}")
             return output_path
         else:
-            print(f" Download failed: {result.stderr}")
+            print(f"Download failed")
             return None
     except Exception as e:
-        print(f" Download failed: {e}")
+        print(f"Download failed: {e}")
         return None
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Primaclaw Model Suggester & Downloader")
-    parser.add_argument("--list", action="store_true", help="List all available models")
-    parser.add_argument("--suggest", action="store_true", help="Suggest models based on criteria")
+    parser = argparse.ArgumentParser(description="Primaclaw Model Suggester")
+    parser.add_argument("--list", action="store_true", help="List all models")
+    parser.add_argument("--suggest", action="store_true", help="Suggest models")
     parser.add_argument("--size", type=float, help="Max size in GB")
     parser.add_argument("--quality", type=float, default=0.9, help="Min quality (0-1)")
-    parser.add_argument("--download", type=int, help="Download model # from suggestions")
-    parser.add_argument("--model", help="Specific model to download")
-    parser.add_argument("--quant", help="Quantization type")
-    parser.add_argument("--dir", help="Download directory")
+    parser.add_argument("--download", type=int, help="Download model #")
+    parser.add_argument("--model", help="Model name")
+    parser.add_argument("--quant", help="Quantization")
     args = parser.parse_args()
-    
-    if args.dir:
-        global DOWNLOAD_DIR
-        DOWNLOAD_DIR = args.dir
     
     if args.list:
         list_models()
@@ -158,7 +162,7 @@ def main():
     
     if args.suggest:
         matches = suggest_model(target_size_gb=args.size, target_quality=args.quality)
-        print(f"\n Run with --download N to download model #N")
+        print(f"\nDownload with: --download N")
         return
     
     if args.download:
@@ -174,17 +178,14 @@ def main():
         if model_key in MODELS_DB and quant in MODELS_DB[model_key]["quants"]:
             info = MODELS_DB[model_key]["quants"][quant]
             download_model(MODELS_DB[model_key]["repo"], info["suffix"])
-        else:
-            print(f"Unknown model/quant: {model_key} {quant}")
         return
     
-    print("Primaclaw Model Suggester (prima.cpp supported models only)\n")
+    print("Primaclaw Model Suggester\n")
     print("Usage:")
-    print("  --list                    List all available models")
-    print("  --suggest                 Suggest models based on criteria")
-    print("  --suggest --size 2       Suggest models smaller than 2GB")
-    print("  --download N              Download suggestion #N")
-    print("  --model qwen2.5-1.5b --quant Q4_K_M   Download specific")
+    print("  --list                  List all models")
+    print("  --suggest              Suggest models")
+    print("  --suggest --size 1    Suggest <1GB models")
+    print("  --download N           Download suggestion #N")
 
 
 if __name__ == "__main__":
