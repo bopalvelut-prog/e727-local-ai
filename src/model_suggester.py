@@ -24,6 +24,7 @@ MODELS_DB = {
             "Q2_K": {"suffix": "qwen2.5-coder-0.5b-instruct-q2_k.gguf", "size_gb": 0.4, "quality": 0.7},
             "Q4_K_M": {"suffix": "qwen2.5-coder-0.5b-instruct-q4_k_m.gguf", "size_gb": 0.5, "quality": 0.9},
             "Q8_0": {"suffix": "qwen2.5-coder-0.5b-instruct-q8_0.gguf", "size_gb": 0.6, "quality": 1.0},
+            "Q4_K_M": {"suffix": "qwen2.5-coder-0.5b-instruct-q4_k_m.gguf", "size_gb": 0.5, "quality": 0.9},
         }
     },
     "qwen2.5-1.5b": {
