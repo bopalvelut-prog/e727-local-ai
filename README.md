@@ -65,6 +65,42 @@ Run with: `/home/ma/prima.cpp/llama-server -m <model-path> --port <port>`
 
 ---
 
+## 🔧 Distributed Inference Setup
+
+**prima.cpp** supports running models across multiple machines for faster inference.
+
+### Requirements
+- prima.cpp compiled with `USE_HIGHS=1`
+- Both machines on same network
+- Model files accessible (or copied to both)
+
+### Head Node (this machine)
+```bash
+cd /home/ma/prima.cpp
+./llama-cli -m models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
+  -c 512 -n 100 -p "Hello" \
+  --world 2 --rank 0 --master 192.168.8.110 --next 192.168.8.121 --prefetch
+```
+
+### Worker Node (remote)
+```bash
+cd /path/to/prima.cpp
+./llama-cli -m /path/to/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
+  --world 2 --rank 1 --master 192.168.8.110 --next 192.168.8.121 --prefetch
+```
+
+### Notes
+- Q2_K quantization models crash during profiling (GGML_TYPE_Q2_K not supported)
+- Use Q4_K, Q4_0, Q8_0, or Q6_K models for distributed mode
+- Both machines need prima.cpp built with HiGHS support
+- The 3B Q4_0 model file appears corrupted - use 1.5B or 0.5B models instead
+
+### Known Issues
+- Profiler crashes with Q2_K quantized models
+- Remote machine needs SSH access or manual worker startup`
+
+---
+
 ## 🌍 Finnish / Suomeksi
 
 **Primaclaw** muuttaa vanhat tietokoneet hajautetuksi tekoälyparveksi, joka on täysin **(OpenAI)-yhteensopiva**.
