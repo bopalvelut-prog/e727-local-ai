@@ -12,15 +12,17 @@ from typing import Optional, Dict, List
 SERVERS = {
     "fast": {"port": 8085, "model": "Qwen2.5-1.5B-Instruct", "size": "0.9GB", "speed": "1.7 tok/s"},
     "medium": {"port": 8083, "model": "qwen2.5-coder-3B", "size": "1.9GB", "speed": "~0.5 tok/s"},
+    "deepseek": {"port": 8088, "model": "DeepSeek-R1-1.5B", "size": "1.1GB", "speed": "~1 tok/s"},
 }
 
 TASK_MODELS = {
-    "quick": "fast",           # Simple greetings, short answers
-    "chat": "fast",            # General conversation
-    "code": "medium",          # Code generation
-    "complex": "medium",       # Complex reasoning
-    "creative": "fast",        # Creative writing
-    "analysis": "medium",      # Analysis tasks
+    "quick": "fast",
+    "chat": "fast",
+    "code": "medium",
+    "complex": "medium",
+    "creative": "fast",
+    "analysis": "medium",
+    "reasoning": "deepseek",
 }
 
 def check_server(port: int) -> bool:
@@ -32,28 +34,15 @@ def check_server(port: int) -> bool:
         return False
 
 def choose_model(task: str = None, speed_priority: bool = True, quality_priority: bool = False) -> Dict:
-    """
-    Choose the best model based on task and priorities.
-    
-    Args:
-        task: Task type (quick, chat, code, complex, creative, analysis)
-        speed_priority: Prefer faster models
-        quality_priority: Prefer better quality models
-    
-    Returns:
-        Dict with server info
-    """
     if task and task in TASK_MODELS:
         choice = TASK_MODELS[task]
     elif speed_priority:
         choice = "fast"
     else:
         choice = "medium"
-    
     return SERVERS[choice]
 
 def list_available_models() -> List[Dict]:
-    """List all available models."""
     available = []
     for name, info in SERVERS.items():
         if check_server(info["port"]):
@@ -61,20 +50,18 @@ def list_available_models() -> List[Dict]:
     return available
 
 def send_request(messages: List, model_key: str = None, task: str = None, **kwargs):
-    """Send a chat completion request to the chosen model."""
     if model_key:
-        server = SERVERS.get(model_key, SERVERS["fast"])
+        if model_key not in SERVERS:
+            print(f"Unknown model: {model_key}. Available: {list(SERVERS.keys())}")
+            return None
+        server = SERVERS[model_key]
     else:
         server = choose_model(task)
     
     port = server["port"]
     url = f"http://localhost:{port}/v1/chat/completions"
     
-    payload = {
-        "messages": messages,
-        **kwargs
-    }
-    
+    payload = {"messages": messages, **kwargs}
     resp = requests.post(url, json=payload, timeout=300)
     resp.raise_for_status()
     return resp.json()
@@ -106,13 +93,9 @@ def main():
         return
     
     try:
-        result = send_request(
-            messages, 
-            model_key=args.model,
-            task=args.task,
-            max_tokens=kwargs.get("max_tokens", 200)
-        )
-        print(result["choices"][0]["message"]["content"])
+        result = send_request(messages, model_key=args.model, task=args.task)
+        if result:
+            print(result["choices"][0]["message"]["content"])
     except Exception as e:
         print(f"Error: {e}")
 
