@@ -1,8 +1,10 @@
 import socket
 import threading
 import logging
+import httpx
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import StreamingResponse
 from src.config import settings
 
 # --- Logging ---
@@ -15,16 +17,13 @@ workers = set()
 def udp_listener():
     """Listens for UDP broadcast from workers."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # Use UDP port from config
     sock.bind((settings.COORDINATOR_HOST, settings.COORDINATOR_UDP_PORT))
     logger.info(f"🚀 UDP Listener running on port {settings.COORDINATOR_UDP_PORT}")
     
     while True:
         data, addr = sock.recvfrom(1024)
         message = data.decode("utf-8")
-        logger.info(f"✓ Received discovery from {addr}: {message}")
         
-        # message format: IP:RANK_N
         if ":" in message:
             ip, rank_str = message.split(":")
             rank = rank_str.replace("RANK_", "")
@@ -33,7 +32,6 @@ def udp_listener():
             if worker_id not in workers:
                 workers.add(worker_id)
                 logger.info(f"✓ Worker {worker_id} joined. Total: {len(workers)}")
-                # Update files (for prima.cpp compatibility)
                 try:
                     with open(settings.WORLD_SIZE_FILE, "w") as f:
                         f.write(str(len(workers)))
@@ -44,19 +42,60 @@ def udp_listener():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Start UDP listener in background
     thread = threading.Thread(target=udp_listener, daemon=True)
     thread.start()
     yield
-    # Shutdown logic can be added here if needed
 
-app = FastAPI(title="NemoClaw Coordinator API", lifespan=lifespan)
+app = FastAPI(title="NemoClaw Coordinator & Gateway", lifespan=lifespan)
+
+# --- OpenAI Proxy Gateway ---
+
+@app.api_route("/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def openai_proxy(request: Request, path: str):
+    """Proxies requests to the Rank 0 worker (Master)."""
+    if not workers:
+        return Response(content='{"error": "No workers available in the swarm"}', status_code=503)
+    
+    # Identify Master (Rank 0)
+    master_ip = "127.0.0.1"
+    for w in workers:
+        if w.endswith(":0"):
+            master_ip = w.split(":")[0]
+            break
+            
+    worker_url = f"http://{master_ip}:8080/v1/{path}"
+    
+    async with httpx.AsyncClient(timeout=None) as client:
+        method = request.method
+        content = await request.body()
+        headers = dict(request.headers)
+        # Remove host header to avoid conflicts
+        headers.pop("host", None)
+        
+        logger.info(f"🌐 Gateway: Proxying {method} /v1/{path} to {worker_url}")
+        
+        try:
+            rp_resp = await client.request(
+                method,
+                worker_url,
+                content=content,
+                headers=headers,
+                params=request.query_params,
+            )
+            return Response(
+                content=rp_resp.content,
+                status_code=rp_resp.status_code,
+                headers=dict(rp_resp.headers),
+            )
+        except Exception as e:
+            logger.error(f"❌ Gateway Error: {e}")
+            return Response(content=f'{{"error": "{str(e)}"}}', status_code=502)
 
 @app.get("/")
 async def get_status():
-    """Returns the swarm status."""
     return {
         "status": "online",
+        "gateway": "active",
         "swarm": {
             "size": len(workers),
             "workers": sorted(list(workers))
