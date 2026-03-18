@@ -11,58 +11,56 @@ import time
 import subprocess
 import os
 
-MODELS = {
-    "tiny": {"port": None, "model": None, "path": None, "size_gb": 0, "min_speed": 0},
-    "small": {"port": None, "model": None, "path": None, "size_gb": 0, "min_speed": 1},
-    "medium": {"port": None, "model": None, "path": None, "size_gb": 0, "min_speed": 5},
-    "large": {"port": None, "model": None, "size_gb": 0, "min_speed": 10},
-}
+LLAMA_SERVER = "/home/ma/prima.cpp/llama-server"
 
-AUTO_START = {
-    "tiny": {"path": "/home/ma/prima.cpp/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf", "port": 8085},
-    "small": {"path": "/home/ma/prima.cpp/models/qwen2.5-coder-3b-instruct-q4_0.gguf", "port": 8083},
-    "deepseek": {"path": "/home/ma/Lataukset/deepseek-coder-1.3b-q2_k.gguf", "port": 8089},
+MODELS = {
+    "qwen-1.5b": {
+        "path": "/home/ma/prima.cpp/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
+        "port": 8085,
+        "speed_expected": 1.7,
+        "type": "chat"
+    },
+    "qwen-coder-3b": {
+        "path": "/home/ma/prima.cpp/models/qwen2.5-coder-3b-instruct-q4_0.gguf",
+        "port": 8083,
+        "speed_expected": 0.5,
+        "type": "code"
+    },
+    "deepseek-coder-1.3b": {
+        "path": "/home/ma/Lataukset/deepseek-coder-1.3b-q2_k.gguf",
+        "port": 8089,
+        "speed_expected": 0.8,
+        "type": "code"
+    },
 }
 
 
 def find_available_models():
     """Scan for running model servers."""
-    found = {}
-    ports = [8085, 8083, 8088, 8089]
-    
-    for port in ports:
+    found = []
+    for name, info in MODELS.items():
         try:
-            resp = requests.get(f"http://localhost:{port}/v1/models", timeout=2)
+            resp = requests.get(f"http://localhost:{info['port']}/v1/models", timeout=2)
             if resp.status_code == 200:
-                data = resp.json()
-                model_id = data["data"][0]["id"]
-                path = model_id
-                name = os.path.basename(path).lower()
-                
-                if "1.5b" in name or "q2_k" in name:
-                    tier = "tiny"
-                elif "3b" in name or "1.3b" in name:
-                    tier = "small"
-                elif "7b" in name:
-                    tier = "medium"
-                elif "14b" in name:
-                    tier = "large"
-                else:
-                    tier = "small"
-                
-                found[tier] = {"port": port, "path": path}
+                speed = measure_speed(info['port'])
+                found.append({
+                    "name": name,
+                    "port": info['port'],
+                    "path": info['path'],
+                    "speed": speed,
+                    "expected": info['speed_expected']
+                })
         except:
             pass
-    
     return found
 
 
-def start_model(tier, port):
+def start_model(name):
     """Start a model server."""
-    if tier not in AUTO_START:
+    info = MODELS.get(name)
+    if not info:
         return False
     
-    info = AUTO_START[tier]
     if not os.path.exists(info["path"]):
         print(f"Model not found: {info['path']}")
         return False
@@ -73,10 +71,12 @@ def start_model(tier, port):
     
     # Start new
     subprocess.Popen(
-        ["/home/ma/prima.cpp/llama-server", "-m", info["path"], "--port", str(info["port"])],
+        [LLAMA_SERVER, "-m", info["path"], "--port", str(info["port"])],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
     )
+    
+    print(f"Starting {name} on port {info['port']}...")
     
     # Wait for ready
     for _ in range(60):
@@ -84,22 +84,23 @@ def start_model(tier, port):
         try:
             resp = requests.get(f"http://localhost:{info['port']}/v1/models", timeout=2)
             if resp.status_code == 200:
-                print(f"Started {tier} model on port {info['port']}")
+                print(f"Ready! {name} on port {info['port']}")
                 return True
         except:
             pass
     
+    print(f"Failed to start {name}")
     return False
 
 
-def measure_speed(port, prompt="Hello", max_tokens=20):
+def measure_speed(port, max_tokens=20):
     """Measure tokens per second."""
     try:
         start = time.time()
         resp = requests.post(
             f"http://localhost:{port}/v1/chat/completions",
-            json={"messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens},
-            timeout=120
+            json={"messages": [{"role": "user", "content": "Hi"}], "max_tokens": max_tokens},
+            timeout=60
         )
         elapsed = time.time() - start
         
@@ -112,45 +113,35 @@ def measure_speed(port, prompt="Hello", max_tokens=20):
     return 0
 
 
-def auto_select_model():
+def auto_select():
     """Automatically select best model based on speed."""
     available = find_available_models()
     
     if not available:
-        print("No models running. Starting tiny model...")
-        start_model("tiny", 8085)
+        print("No models running. Starting Qwen 1.5B...")
+        start_model("qwen-1.5b")
         return
     
-    # Measure speeds
-    speeds = {}
-    for tier, info in available.items():
-        speed = measure_speed(info["port"])
-        speeds[tier] = speed
-        print(f"  {tier}: {speed:.2f} tok/s")
+    # Sort by expected speed
+    available.sort(key=lambda x: x['expected'], reverse=True)
     
-    # Determine action
-    avg_speed = sum(speeds.values()) / len(speeds) if speeds else 0
-    print(f"\nAverage speed: {avg_speed:.2f} tok/s")
+    print("\nAvailable Models:")
+    for m in available:
+        ratio = m['speed'] / m['expected'] if m['expected'] > 0 else 0
+        status = "OK" if ratio > 0.5 else "SLOW" if ratio > 0.2 else "TOO SLOW"
+        print(f"  {m['name']:<20} {m['speed']:.2f} tok/s (expected {m['expected']:.1f}) [{status}]")
     
-    if avg_speed < 1:
-        # Switch to smaller model
-        print("Speed too slow! Switching to smaller model...")
-        if "small" in available and "tiny" not in available:
-            start_model("tiny", 8085)
-        elif "medium" in available:
-            start_model("small", 8083)
-    elif avg_speed > 10:
-        # Try larger model
-        print("Speed good! Trying larger model...")
-        if "tiny" in available:
-            start_model("small", 8083)
-        elif "small" in available:
-            start_model("medium", 8087)
+    # Check if current models are fast enough
+    fastest = available[0] if available else None
     
-    return speeds
+    if fastest and fastest['speed'] < 0.5:
+        print(f"\nAll models too slow! Current fastest: {fastest['name']} at {fastest['speed']:.2f} tok/s")
+        print("This device may need GPU acceleration for better performance.")
+    
+    return available
 
 
-def send_to_pool(prompt, max_tokens=100):
+def send_prompt(prompt, max_tokens=100):
     """Send prompt to best available model."""
     available = find_available_models()
     
@@ -158,19 +149,20 @@ def send_to_pool(prompt, max_tokens=100):
         print("No models available!")
         return None
     
-    # Try tiers in order: small > tiny > medium > large
-    for tier in ["small", "tiny", "medium", "deepseek", "large"]:
-        if tier in available:
-            try:
-                resp = requests.post(
-                    f"http://localhost:{available[tier]['port']}/v1/chat/completions",
-                    json={"messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens},
-                    timeout=120
-                )
-                if resp.status_code == 200:
-                    return resp.json()
-            except:
-                pass
+    # Try by preference: qwen-1.5b first (fastest for chat), then others
+    for pref in ["qwen-1.5b", "deepseek-coder-1.3b", "qwen-coder-3b"]:
+        for m in available:
+            if m['name'] == pref:
+                try:
+                    resp = requests.post(
+                        f"http://localhost:{m['port']}/v1/chat/completions",
+                        json={"messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens},
+                        timeout=120
+                    )
+                    if resp.status_code == 200:
+                        return resp.json()
+                except:
+                    pass
     
     return None
 
@@ -179,39 +171,40 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="Primaclaw Model Pool")
     parser.add_argument("--list", action="store_true", help="List available models")
-    parser.add_argument("--speed", action="store_true", help="Measure speed of all models")
-    parser.add_argument("--auto", action="store_true", help="Auto-select model based on speed")
+    parser.add_argument("--status", action="store_true", help="Check model status")
+    parser.add_argument("--start", help="Start specific model (qwen-1.5b, qwen-coder-3b, deepseek-coder-1.3b)")
     parser.add_argument("--test", help="Send test prompt")
     args = parser.parse_args()
+    
+    if args.start:
+        start_model(args.start)
+        return
     
     if args.list:
         available = find_available_models()
         print("\nAvailable Models:")
-        for tier, info in available.items():
-            speed = measure_speed(info["port"])
-            print(f"  [{tier}] Port {info['port']} - {speed:.2f} tok/s")
+        if not available:
+            print("  No models running")
+        for m in available:
+            print(f"  [{m['name']}] Port {m['port']} - {m['speed']:.2f} tok/s")
         return
     
-    if args.speed:
-        auto_select_model()
-        return
-    
-    if args.auto:
-        auto_select_model()
+    if args.status:
+        auto_select()
         return
     
     if args.test:
-        result = send_to_pool(args.test)
+        result = send_prompt(args.test)
         if result:
             print(result["choices"][0]["message"]["content"])
         return
     
     print("Primaclaw Model Pool\n")
     print("Usage:")
-    print("  --list   List available models")
-    print("  --speed  Measure speed of all models")
-    print("  --auto   Auto-select model based on speed")
-    print("  --test 'prompt'  Send test prompt")
+    print("  --list                List available models")
+    print("  --status              Check model status")
+    print("  --start qwen-1.5b    Start specific model")
+    print("  --test 'prompt'      Send test prompt")
 
 
 if __name__ == "__main__":
