@@ -13,11 +13,12 @@ MODELS_DB = {
     "qwen2.5-1.5b": {
         "repo": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
         "quants": {
-            "Q2_K": {"suffix": "Qwen2.5-1.5B-Instruct-Q2_K.gguf", "size_gb": 0.7, "quality": 0.7},
-            "Q3_K_M": {"suffix": "Qwen2.5-1.5B-Instruct-Q3_K_M.gguf", "size_gb": 0.9, "quality": 0.8},
-            "Q4_K_M": {"suffix": "Qwen2.5-1.5B-Instruct-Q4_K_M.gguf", "size_gb": 1.0, "quality": 0.9},
-            "Q5_K_M": {"suffix": "Qwen2.5-1.5B-Instruct-Q5_K_M.gguf", "size_gb": 1.2, "quality": 0.95},
-            "Q8_0": {"suffix": "Qwen2.5-1.5B-Instruct-Q8_0.gguf", "size_gb": 1.6, "quality": 1.0},
+            "Q2_K": {"suffix": "qwen2.5-1.5b-instruct-q2_k.gguf", "size_gb": 0.7, "quality": 0.7},
+            "Q3_K_M": {"suffix": "qwen2.5-1.5b-instruct-q3_k_m.gguf", "size_gb": 0.9, "quality": 0.8},
+            "Q4_0": {"suffix": "qwen2.5-1.5b-instruct-q4_0.gguf", "size_gb": 1.0, "quality": 0.85},
+            "Q4_K_M": {"suffix": "qwen2.5-1.5b-instruct-q4_k_m.gguf", "size_gb": 1.0, "quality": 0.9},
+            "Q5_K_M": {"suffix": "qwen2.5-1.5b-instruct-q5_k_m.gguf", "size_gb": 1.2, "quality": 0.95},
+            "Q8_0": {"suffix": "qwen2.5-1.5b-instruct-q8_0.gguf", "size_gb": 1.6, "quality": 1.0},
         }
     },
     "qwen2.5-3b": {
@@ -43,20 +44,6 @@ MODELS_DB = {
             "Q8_0": {"suffix": "qwen2.5-7b-instruct-q8_0.gguf", "size_gb": 7.5, "quality": 1.0},
         }
     },
-    "qwen2.5-coder-3b": {
-        "repo": "Qwen/Qwen2.5-3B-Coder-Instruct-GGUF",
-        "quants": {
-            "Q4_0": {"suffix": "qwen2.5-coder-3b-instruct-q4_0.gguf", "size_gb": 1.9, "quality": 0.85},
-            "Q8_0": {"suffix": "qwen2.5-coder-3b-instruct-q8_0.gguf", "size_gb": 3.4, "quality": 1.0},
-        }
-    },
-    "qwen2.5-coder-7b": {
-        "repo": "Qwen/Qwen2.5-7B-Coder-Instruct-GGUF",
-        "quants": {
-            "Q4_0": {"suffix": "qwen2.5-coder-7b-instruct-q4_0.gguf", "size_gb": 4.2, "quality": 0.85},
-            "Q6_K": {"suffix": "qwen2.5-coder-7b-instruct-q6_k.gguf", "size_gb": 5.9, "quality": 0.95},
-        }
-    },
     "llama-3.2-3b": {
         "repo": "meta-llama/Llama-3.2-3B-Instruct-GGUF",
         "quants": {
@@ -66,9 +53,16 @@ MODELS_DB = {
         }
     },
     "phi-3-mini": {
-        "repo": "microsoft/Phi-3-mini-4k-instruct-gguf",
+        "repo": "bartowski/Phi-3-mini-4k-instruct-GGUF",
         "quants": {
             "Q4_K_M": {"suffix": "Phi-3-mini-4k-instruct-Q4_K_M.gguf", "size_gb": 2.0, "quality": 0.9},
+        }
+    },
+    "deepseek-r1-1.5b": {
+        "repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
+        "quants": {
+            "Q2_K": {"suffix": "DeepSeek-R1-Distill-Qwen-1.5B-Q2_K.gguf", "size_gb": 0.6, "quality": 0.7},
+            "Q4_K_M": {"suffix": "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf", "size_gb": 0.9, "quality": 0.9},
         }
     },
 }
@@ -111,14 +105,19 @@ def download_model(repo, filename, download_dir=DOWNLOAD_DIR):
     url = f"https://huggingface.co/{repo}/resolve/main/{filename}"
     output_path = os.path.join(download_dir, filename)
     if os.path.exists(output_path):
-        print(f"Model already exists: {output_path}")
+        print(f" Model already exists: {output_path}")
         return output_path
     print(f"\n Downloading {filename}...")
+    print(f" From: {url}")
     try:
-        subprocess.run(["wget", "-O", output_path, url], check=True)
-        print(f" Downloaded: {output_path}")
-        return output_path
-    except subprocess.CalledProcessError as e:
+        result = subprocess.run(["wget", "-O", output_path, url], capture_output=True, text=True)
+        if result.returncode == 0:
+            print(f" Downloaded: {output_path}")
+            return output_path
+        else:
+            print(f" Download failed: {result.stderr}")
+            return None
+    except Exception as e:
         print(f" Download failed: {e}")
         return None
 
@@ -146,7 +145,6 @@ def main():
     if args.suggest:
         matches = suggest_model(target_size_gb=args.size, target_quality=args.quality)
         print(f"\n Run with --download N to download model #N")
-        print(f"   Or use --model <name> --quant <type> to download specific")
         return
     
     if args.download:
@@ -157,11 +155,13 @@ def main():
         return
     
     if args.model and args.quant:
-        if args.model in MODELS_DB and args.quant in MODELS_DB[args.model]["quants"]:
-            info = MODELS_DB[args.model]["quants"][args.quant]
-            download_model(MODELS_DB[args.model]["repo"], info["suffix"])
+        model_key = args.model.lower()
+        quant = args.quant.upper()
+        if model_key in MODELS_DB and quant in MODELS_DB[model_key]["quants"]:
+            info = MODELS_DB[model_key]["quants"][quant]
+            download_model(MODELS_DB[model_key]["repo"], info["suffix"])
         else:
-            print(f"Unknown model/quant: {args.model} {args.quant}")
+            print(f"Unknown model/quant: {model_key} {quant}")
         return
     
     print("Primaclaw Model Suggester & Downloader\n")
