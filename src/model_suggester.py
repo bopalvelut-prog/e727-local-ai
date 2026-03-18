@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Primaclaw Model Suggester & Downloader
-Suggests better quantized models based on speed and downloads from Hugging Face.
+Only includes models supported by prima.cpp (no thinking/reasoning models)
 """
 
 import requests
@@ -41,7 +41,20 @@ MODELS_DB = {
             "Q4_K_M": {"suffix": "qwen2.5-7b-instruct-q4_k_m.gguf", "size_gb": 4.6, "quality": 0.9},
             "Q5_K_M": {"suffix": "qwen2.5-7b-instruct-q5_k_m.gguf", "size_gb": 5.3, "quality": 0.95},
             "Q6_K": {"suffix": "qwen2.5-7b-instruct-q6_k.gguf", "size_gb": 6.0, "quality": 0.98},
-            "Q8_0": {"suffix": "qwen2.5-7b-instruct-q8_0.gguf", "size_gb": 7.5, "quality": 1.0},
+        }
+    },
+    "qwen2.5-coder-3b": {
+        "repo": "Qwen/Qwen2.5-3B-Coder-Instruct-GGUF",
+        "quants": {
+            "Q4_0": {"suffix": "qwen2.5-coder-3b-instruct-q4_0.gguf", "size_gb": 1.9, "quality": 0.85},
+            "Q8_0": {"suffix": "qwen2.5-coder-3b-instruct-q8_0.gguf", "size_gb": 3.4, "quality": 1.0},
+        }
+    },
+    "qwen2.5-coder-7b": {
+        "repo": "Qwen/Qwen2.5-7B-Coder-Instruct-GGUF",
+        "quants": {
+            "Q4_0": {"suffix": "qwen2.5-coder-7b-instruct-q4_0.gguf", "size_gb": 4.2, "quality": 0.85},
+            "Q6_K": {"suffix": "qwen2.5-coder-7b-instruct-q6_k.gguf", "size_gb": 5.9, "quality": 0.95},
         }
     },
     "llama-3.2-3b": {
@@ -58,20 +71,13 @@ MODELS_DB = {
             "Q4_K_M": {"suffix": "Phi-3-mini-4k-instruct-Q4_K_M.gguf", "size_gb": 2.0, "quality": 0.9},
         }
     },
-    "deepseek-r1-1.5b": {
-        "repo": "lmstudio-community/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
-        "quants": {
-            "Q2_K": {"suffix": "DeepSeek-R1-Distill-Qwen-1.5B-Q3_K_L.gguf", "size_gb": 0.6, "quality": 0.7},
-            "Q4_K_M": {"suffix": "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf", "size_gb": 0.9, "quality": 0.9},
-        }
-    },
 }
 
 DOWNLOAD_DIR = os.path.expanduser("~/Lataukset")
 
 
 def list_models():
-    print("\n Available Models & Quantizations:\n")
+    print("\n Available Models (prima.cpp supported):\n")
     print(f"{'Model':<25} {'Quant':<10} {'Size':<10} {'Quality':<10}")
     print("-" * 55)
     for model_key, info in MODELS_DB.items():
@@ -83,7 +89,7 @@ def list_models():
 
 
 def suggest_model(target_size_gb=None, target_quality=0.9):
-    print(f"\n Suggestions (target: {'any size' if not target_size_gb else f'<{target_size_gb}GB'}, quality >={target_quality:.0%}):\n")
+    print(f"\n Suggestions (prima.cpp supported, target: {'any size' if not target_size_gb else f'<{target_size_gb}GB'}, quality >={target_quality:.0%}):\n")
     matches = []
     for model_key, info in MODELS_DB.items():
         for quant, qinfo in info["quants"].items():
@@ -164,11 +170,13 @@ def main():
             print(f"Unknown model/quant: {model_key} {quant}")
         return
     
-    print("Primaclaw Model Suggester & Downloader\n")
+    print("Primaclaw Model Suggester (prima.cpp supported models only)\n")
+    print("Note: Removed thinking/reasoning models (DeepSeek R1, QwQ, Qwen3)")
+    print("      prima.cpp does not support these models.\n")
     print("Usage:")
     print("  --list                    List all available models")
     print("  --suggest                 Suggest models based on criteria")
-    print("  --suggest --size 2        Suggest models smaller than 2GB")
+    print("  --suggest --size 2       Suggest models smaller than 2GB")
     print("  --download N              Download suggestion #N")
     print("  --model qwen2.5-1.5b --quant Q4_K_M   Download specific")
 
