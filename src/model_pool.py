@@ -14,6 +14,12 @@ import os
 LLAMA_SERVER = "/home/ma/prima.cpp/llama-server"
 
 MODELS = {
+    "qwen-0.5b": {
+        "path": "/home/ma/Lataukset/Qwen2.5-0.5B-Q2_K.gguf",
+        "port": 8090,
+        "speed_expected": 2.0,
+        "type": "chat"
+    },
     "qwen-1.5b": {
         "path": "/home/ma/prima.cpp/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
         "port": 8085,
@@ -59,17 +65,16 @@ def start_model(name):
     """Start a model server."""
     info = MODELS.get(name)
     if not info:
+        print(f"Unknown model: {name}")
         return False
     
     if not os.path.exists(info["path"]):
         print(f"Model not found: {info['path']}")
         return False
     
-    # Kill existing on port
     subprocess.run(f"pkill -f 'llama-server.*{info['port']}'", shell=True)
     time.sleep(1)
     
-    # Start new
     subprocess.Popen(
         [LLAMA_SERVER, "-m", info["path"], "--port", str(info["port"])],
         stdout=subprocess.DEVNULL,
@@ -78,7 +83,6 @@ def start_model(name):
     
     print(f"Starting {name} on port {info['port']}...")
     
-    # Wait for ready
     for _ in range(60):
         time.sleep(1)
         try:
@@ -118,11 +122,10 @@ def auto_select():
     available = find_available_models()
     
     if not available:
-        print("No models running. Starting Qwen 1.5B...")
-        start_model("qwen-1.5b")
+        print("No models running. Starting Qwen 0.5B...")
+        start_model("qwen-0.5b")
         return
     
-    # Sort by expected speed
     available.sort(key=lambda x: x['expected'], reverse=True)
     
     print("\nAvailable Models:")
@@ -131,12 +134,10 @@ def auto_select():
         status = "OK" if ratio > 0.5 else "SLOW" if ratio > 0.2 else "TOO SLOW"
         print(f"  {m['name']:<20} {m['speed']:.2f} tok/s (expected {m['expected']:.1f}) [{status}]")
     
-    # Check if current models are fast enough
     fastest = available[0] if available else None
     
     if fastest and fastest['speed'] < 0.5:
-        print(f"\nAll models too slow! Current fastest: {fastest['name']} at {fastest['speed']:.2f} tok/s")
-        print("This device may need GPU acceleration for better performance.")
+        print(f"\nAll models slow. Fastest: {fastest['name']} at {fastest['speed']:.2f} tok/s")
     
     return available
 
@@ -149,8 +150,7 @@ def send_prompt(prompt, max_tokens=100):
         print("No models available!")
         return None
     
-    # Try by preference: qwen-1.5b first (fastest for chat), then others
-    for pref in ["qwen-1.5b", "deepseek-coder-1.3b", "qwen-coder-3b"]:
+    for pref in ["qwen-0.5b", "qwen-1.5b", "deepseek-coder-1.3b", "qwen-coder-3b"]:
         for m in available:
             if m['name'] == pref:
                 try:
@@ -172,7 +172,7 @@ def main():
     parser = argparse.ArgumentParser(description="Primaclaw Model Pool")
     parser.add_argument("--list", action="store_true", help="List available models")
     parser.add_argument("--status", action="store_true", help="Check model status")
-    parser.add_argument("--start", help="Start specific model (qwen-1.5b, qwen-coder-3b, deepseek-coder-1.3b)")
+    parser.add_argument("--start", help="Start specific model")
     parser.add_argument("--test", help="Send test prompt")
     args = parser.parse_args()
     
@@ -200,11 +200,12 @@ def main():
         return
     
     print("Primaclaw Model Pool\n")
-    print("Usage:")
-    print("  --list                List available models")
-    print("  --status              Check model status")
-    print("  --start qwen-1.5b    Start specific model")
-    print("  --test 'prompt'      Send test prompt")
+    print("Models: qwen-0.5b, qwen-1.5b, qwen-coder-3b, deepseek-coder-1.3b")
+    print("\nUsage:")
+    print("  --list                  List available models")
+    print("  --status                Check model status")
+    print("  --start qwen-0.5b    Start specific model")
+    print("  --test 'prompt'        Send test prompt")
 
 
 if __name__ == "__main__":
