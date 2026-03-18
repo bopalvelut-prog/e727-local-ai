@@ -71,6 +71,15 @@ MODELS_DB = {
             "Q4_K_M": {"suffix": "Phi-3-mini-4k-instruct-Q4_K_M.gguf", "size_gb": 2.0, "quality": 0.9},
         }
     },
+    "deepseek-coder-1.3b": {
+        "repo": "TheBloke/deepseek-coder-1.3b-instruct-GGUF",
+        "quants": {
+            "Q2_K": {"suffix": "deepseek-coder-1.3b-instruct.Q2_K.gguf", "size_gb": 0.6, "quality": 0.75},
+            "Q3_K_M": {"suffix": "deepseek-coder-1.3b-instruct.Q3_K_M.gguf", "size_gb": 0.7, "quality": 0.8},
+            "Q4_0": {"suffix": "deepseek-coder-1.3b-instruct.Q4_0.gguf", "size_gb": 0.8, "quality": 0.85},
+            "Q4_K_M": {"suffix": "deepseek-coder-1.3b-instruct.Q4_K_M.gguf", "size_gb": 0.8, "quality": 0.9},
+        }
+    },
 }
 
 DOWNLOAD_DIR = os.path.expanduser("~/Lataukset")
@@ -100,10 +109,10 @@ def suggest_model(target_size_gb=None, target_quality=0.9):
                         "quality": qinfo["quality"], "repo": info["repo"], "filename": qinfo["suffix"]
                     })
     matches.sort(key=lambda x: (x["size_gb"], -x["quality"]))
-    print(f"{'#':<3} {'Model':<20} {'Quant':<10} {'Size':<10} {'Quality'}")
-    print("-" * 55)
+    print(f"{'#':<3} {'Model':<22} {'Quant':<10} {'Size':<10} {'Quality'}")
+    print("-" * 60)
     for i, m in enumerate(matches[:10], 1):
-        print(f"{i:<3} {m['model']:<20} {m['quant']:<10} {m['size_gb']:.1f} GB    {m['quality']:.0%}")
+        print(f"{i:<3} {m['model']:<22} {m['quant']:<10} {m['size_gb']:.1f} GB    {m['quality']:.0%}")
     return matches[:10]
 
 
@@ -114,7 +123,6 @@ def download_model(repo, filename, download_dir=DOWNLOAD_DIR):
         print(f" Model already exists: {output_path}")
         return output_path
     print(f"\n Downloading {filename}...")
-    print(f" From: {url}")
     try:
         result = subprocess.run(["wget", "-O", output_path, url], capture_output=True, text=True)
         if result.returncode == 0:
@@ -171,8 +179,6 @@ def main():
         return
     
     print("Primaclaw Model Suggester (prima.cpp supported models only)\n")
-    print("Note: Removed thinking/reasoning models (DeepSeek R1, QwQ, Qwen3)")
-    print("      prima.cpp does not support these models.\n")
     print("Usage:")
     print("  --list                    List all available models")
     print("  --suggest                 Suggest models based on criteria")
