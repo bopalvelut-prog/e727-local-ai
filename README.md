@@ -75,6 +75,84 @@ curl -sL https://raw.githubusercontent.com/bopalvelut-prog/e727-local-ai/main/in
 
 ---
 
+## 🔧 Running Large Models with prima.cpp (Distributed Mode)
+
+prima.cpp enables **distributed inference** across multiple devices - each device only loads the layers it needs via mmap (memory-mapped files). No single device loads the entire model!
+
+### How It Works
+
+1. **Lazy Loading**: Each device uses `mmap` to map the GGUF model file - only accessed pages are loaded into RAM
+2. **Layer Distribution**: The scheduler assigns model layers to each device based on:
+   - Compute power (CPU/GPU)
+   - Disk read speed
+   - Available RAM/VRAM
+3. **Ring Pipeline**: Devices pass activations in a ring (Device A → B → C → A), overlapping disk I/O with compute
+4. **Low Memory Pressure**: 70B models can run with <6% memory pressure on devices with just 2-4GB available RAM
+
+### Benchmark (Token Latency)
+
+| Model | llama.cpp | prima.cpp |
+|-------|-----------|-----------|
+| Qwen-2.5-7B | 14 ms | 14 ms |
+| Qwen-2.5-14B | 23 ms | 23 ms |
+| Qwen-2.5-32B | 224 ms | **89 ms** |
+| Qwen-2.5-72B | 12227 ms | **867 ms** |
+| DeepSeek-R1-Distill-Llama-70B | 10978 ms | **724 ms** |
+
+*Note: For small models (3B-14B), prima.cpp falls back to single-device mode. Speed advantage shows on 32B+ models.*
+
+### Setup (Multiple Devices)
+
+Connect devices to the same Wi-Fi. Each device runs the **same model file path** (can be local or shared network drive):
+
+```bash
+# Device 0 (head device - also runs the API server):
+./llama-server -m qwen2.5-72b-q4_k_m.gguf --world 4 --rank 0 \
+  --master 192.168.1.2 --next 192.168.1.3 --prefetch \
+  --host 127.0.0.1 --port 8080
+
+# Device 1 (worker with 8GB VRAM):
+./llama-cli -m qwen2.5-72b-q4_k_m.gguf --world 4 --rank 1 \
+  --master 192.168.1.2 --next 192.168.1.4 --prefetch --gpu-mem 8
+
+# Device 2 (worker with 11GB VRAM):
+./llama-cli -m qwen2.5-72b-q4_k_m.gguf --world 4 --rank 2 \
+  --master 192.168.1.2 --next 192.168.1.3 --prefetch --gpu-mem 11
+
+# Device 3 (worker, CPU only):
+./llama-cli -m qwen2.5-72b-q4_k_m.gguf --world 4 --rank 3 \
+  --master 192.168.1.2 --next 192.168.1.2 --prefetch
+```
+
+**Key options:**
+- `--world N` - Total number of devices in the cluster
+- `--rank N` - This device's rank (0 = head)
+- `--master IP` - IP address of rank 0 device
+- `--next IP` - IP address of next device in ring
+- `--prefetch` - Enable layer prefetching
+- `--gpu-mem N` - GPU memory limit (GiB)
+- `-c N` - Context size (default: 2048)
+
+**API Usage:**
+```bash
+curl http://127.0.0.1:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen2.5-72b",
+    "messages": [{"role": "user", "content": "Hello!"}],
+    "max_tokens": 200
+  }'
+```
+
+### Tips
+
+- Use SSD for model files if possible
+- Disable firewall or open ports 9000 (data) and 10000 (signal)
+- For CPU-only devices, omit `--gpu-mem`
+- prima.cpp automatically profiles devices and assigns optimal layer distribution
+
+---
+
 ## 🌍 Finnish / Suomeksi
 
 **Primaclaw** on Business Oulun (bopalvelut-prog) periaatteita noudattava projekti, joka muuttaa vanhat tietokoneet hajautetuksi tekoälyparveksi.
