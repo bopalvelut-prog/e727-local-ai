@@ -54,6 +54,17 @@ python -m src.benchmark
 
 ---
 
+## 📊 Running Servers
+
+| Port | Model | Size | Speed |
+|------|-------|------|-------|
+| 8085 | Qwen2.5-1.5B-Instruct-Q4_K_M | 0.9GB | Fast (1.7 tok/s) |
+| 8083 | qwen2.5-coder-3B-Instruct | 1.9GB | Medium (~0.5 tok/s) |
+
+Run with: `/home/ma/prima.cpp/llama-server -m <model-path> --port <port>`
+
+---
+
 ## 🌍 Finnish / Suomeksi
 
 **Primaclaw** muuttaa vanhat tietokoneet hajautetuksi tekoälyparveksi, joka on täysin **(OpenAI)-yhteensopiva**.
