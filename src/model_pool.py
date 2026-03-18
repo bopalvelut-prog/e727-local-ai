@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
 Primaclaw Model Pool
-Automatically selects model based on performance:
-- Speed < 1 tok/s: Use smaller model
-- Speed > 10 tok/s: Try larger model
+Automatically selects model based on performance
 """
 
 import requests
@@ -19,6 +17,12 @@ MODELS = {
         "port": 8090,
         "speed_expected": 2.0,
         "type": "chat"
+    },
+    "qwen-coder-0.5b": {
+        "path": "/home/ma/Lataukset/Qwen2.5-Coder-0.5B-Q2_K.gguf",
+        "port": 8091,
+        "speed_expected": 2.0,
+        "type": "code"
     },
     "qwen-1.5b": {
         "path": "/home/ma/prima.cpp/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
@@ -42,7 +46,6 @@ MODELS = {
 
 
 def find_available_models():
-    """Scan for running model servers."""
     found = []
     for name, info in MODELS.items():
         try:
@@ -54,7 +57,8 @@ def find_available_models():
                     "port": info['port'],
                     "path": info['path'],
                     "speed": speed,
-                    "expected": info['speed_expected']
+                    "expected": info['speed_expected'],
+                    "type": info['type']
                 })
         except:
             pass
@@ -62,7 +66,6 @@ def find_available_models():
 
 
 def start_model(name):
-    """Start a model server."""
     info = MODELS.get(name)
     if not info:
         print(f"Unknown model: {name}")
@@ -93,12 +96,10 @@ def start_model(name):
         except:
             pass
     
-    print(f"Failed to start {name}")
     return False
 
 
 def measure_speed(port, max_tokens=20):
-    """Measure tokens per second."""
     try:
         start = time.time()
         resp = requests.post(
@@ -107,10 +108,8 @@ def measure_speed(port, max_tokens=20):
             timeout=60
         )
         elapsed = time.time() - start
-        
         if resp.status_code == 200:
-            data = resp.json()
-            tokens = data.get("usage", {}).get("completion_tokens", max_tokens)
+            tokens = resp.json().get("usage", {}).get("completion_tokens", max_tokens)
             return tokens / elapsed if elapsed > 0 else 0
     except:
         pass
@@ -118,39 +117,29 @@ def measure_speed(port, max_tokens=20):
 
 
 def auto_select():
-    """Automatically select best model based on speed."""
     available = find_available_models()
-    
     if not available:
         print("No models running. Starting Qwen 0.5B...")
         start_model("qwen-0.5b")
         return
     
-    available.sort(key=lambda x: x['expected'], reverse=True)
+    available.sort(key=lambda x: x['speed'], reverse=True)
     
     print("\nAvailable Models:")
     for m in available:
-        ratio = m['speed'] / m['expected'] if m['expected'] > 0 else 0
-        status = "OK" if ratio > 0.5 else "SLOW" if ratio > 0.2 else "TOO SLOW"
-        print(f"  {m['name']:<20} {m['speed']:.2f} tok/s (expected {m['expected']:.1f}) [{status}]")
-    
-    fastest = available[0] if available else None
-    
-    if fastest and fastest['speed'] < 0.5:
-        print(f"\nAll models slow. Fastest: {fastest['name']} at {fastest['speed']:.2f} tok/s")
+        status = "OK" if m['speed'] > 1 else "SLOW" if m['speed'] > 0.5 else "TOO SLOW"
+        print(f"  {m['name']:<20} {m['speed']:.2f} tok/s [{status}]")
     
     return available
 
 
 def send_prompt(prompt, max_tokens=100):
-    """Send prompt to best available model."""
     available = find_available_models()
-    
     if not available:
         print("No models available!")
         return None
     
-    for pref in ["qwen-0.5b", "qwen-1.5b", "deepseek-coder-1.3b", "qwen-coder-3b"]:
+    for pref in ["qwen-0.5b", "qwen-coder-0.5b", "qwen-1.5b", "deepseek-coder-1.3b", "qwen-coder-3b"]:
         for m in available:
             if m['name'] == pref:
                 try:
@@ -163,7 +152,6 @@ def send_prompt(prompt, max_tokens=100):
                         return resp.json()
                 except:
                     pass
-    
     return None
 
 
@@ -200,7 +188,7 @@ def main():
         return
     
     print("Primaclaw Model Pool\n")
-    print("Models: qwen-0.5b, qwen-1.5b, qwen-coder-3b, deepseek-coder-1.3b")
+    print("Models: qwen-0.5b, qwen-coder-0.5b, qwen-1.5b, qwen-coder-3b, deepseek-coder-1.3b")
     print("\nUsage:")
     print("  --list                  List available models")
     print("  --status                Check model status")
