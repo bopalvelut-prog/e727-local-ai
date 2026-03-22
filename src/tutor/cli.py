@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Krav Maga Self-Defense Tutor -- CLI interface.
+Krav Masa Self-Defense Tutor -- CLI interface.
 Uses prima.cpp (llama-server) as default backend.
 
 Usage:
@@ -66,7 +66,7 @@ def chat_primaclaw(prompt, coordinator_host="localhost", coordinator_port=10000)
 
 def interactive_mode(backend, host, port, n_predict):
     """Interactive chat loop."""
-    print("\n=== Krav Maga Self-Defense Tutor ===")
+    print("\n=== Krav Masa Self-Defense Tutor ===")
     if backend == "primacpp":
         print(f"Backend: prima.cpp (llama-server at {host}:{port})")
     elif backend == "primaclaw":
@@ -111,7 +111,7 @@ def interactive_mode(backend, host, port, n_predict):
 def print_training_plan():
     """Print full training program overview."""
     print("\n" + "=" * 60)
-    print("KRAV MAGA TRAINING PROGRAM")
+    print("KRAV MASA TRAINING PROGRAM")
     print("=" * 60)
     for key, level in TRAINING_LEVELS.items():
         print(f"\n[{key.upper()}] {level['name']}")
@@ -136,7 +136,7 @@ def print_level_detail(level_name):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Krav Maga Self-Defense Tutor")
+    parser = argparse.ArgumentParser(description="Krav Masa Self-Defense Tutor")
     parser.add_argument("-q", "--question", help="Ask a single question")
     parser.add_argument("--backend", choices=["primacpp", "primaclaw"], default="primacpp",
                         help="Inference backend: primacpp (llama-server) or primaclaw (coordinator)")

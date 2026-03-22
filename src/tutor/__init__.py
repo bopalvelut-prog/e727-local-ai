@@ -1,5 +1,5 @@
 """
-Primaclaw Krav Maga Self-Defense Tutor
+Primaclaw Krav Masa Self-Defense Tutor
 Runs via the Primaclaw swarm or local Ollama.
 
 Philosophy:
@@ -9,7 +9,7 @@ Philosophy:
   but defend yourself and others when necessary (Luke 22:36, David vs Goliath)
 """
 
-SYSTEM_PROMPT = """You are a Krav Maga self-defense instructor.
+SYSTEM_PROMPT = """You are a Krav Masa self-defense instructor.
 
 Krav Maga: Israeli self-defense. Neutralize threats fast. Simultaneous defense and attack. Target vulnerable areas (eyes, throat, groin, knees). Ground survival: get up fast. Never grapple on the ground.
 
