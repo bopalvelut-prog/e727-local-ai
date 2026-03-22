@@ -26,7 +26,7 @@ import argparse
 from src.tutor import SYSTEM_PROMPT, get_training_plan, TRAINING_LEVELS
 
 
-def chat_primacpp(prompt, host="localhost", port=8080, n_predict=256):
+def chat_primacpp(prompt, host="localhost", port=8080, n_predict=512):
     """Send prompt to prima.cpp (llama-server) directly."""
     import httpx
     try:
@@ -143,7 +143,7 @@ def main():
     parser.add_argument("--host", default="localhost", help="Server host")
     parser.add_argument("--port", type=int, default=8080,
                         help="Server port (8080 for prima.cpp, 10000 for coordinator)")
-    parser.add_argument("--n-predict", type=int, default=256,
+    parser.add_argument("--n-predict", type=int, default=512,
                         help="Max tokens to generate (prima.cpp only)")
     parser.add_argument("--level", help="Show training plan for level (white/yellow/orange/green/blue)")
     parser.add_argument("--plan", action="store_true", help="Show full training program")
