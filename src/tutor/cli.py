@@ -36,6 +36,7 @@ def chat_primacpp(prompt, host="localhost", port=8080, n_predict=256):
             "prompt": full_prompt,
             "n_predict": n_predict,
             "temperature": 0.7,
+            "stop": ["<|user|>", "<|system|>"],
         }, timeout=300)
         resp.raise_for_status()
         return resp.json().get("content", "").strip()
