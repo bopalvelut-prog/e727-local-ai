@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
 Krav Maga Self-Defense Tutor -- CLI interface.
-Uses Primaclaw swarm or local Ollama as backend.
+Uses prima.cpp (llama-server) as default backend.
 
 Usage:
   python -m src.tutor.cli                          # Interactive mode
   python -m src.tutor.cli -q "How do I escape a choke?"  # Single question
   python -m src.tutor.cli --level yellow           # Show training plan
   python -m src.tutor.cli --plan                   # Full training program
+  python -m src.tutor.cli --backend primaclaw      # Via Primaclaw coordinator
 """
 
 import sys
@@ -25,8 +26,27 @@ import argparse
 from src.tutor import SYSTEM_PROMPT, get_training_plan, TRAINING_LEVELS
 
 
+def chat_primacpp(prompt, host="localhost", port=8080, n_predict=512):
+    """Send prompt to prima.cpp (llama-server) directly."""
+    import httpx
+    try:
+        # llama-server uses /completion endpoint
+        full_prompt = f"<|system|>\n{SYSTEM_PROMPT}\n<|user|>\n{prompt}\n<|assistant|>"
+        url = f"http://{host}:{port}/completion"
+        resp = httpx.post(url, json={
+            "prompt": full_prompt,
+            "n_predict": n_predict,
+            "temperature": 0.7,
+            "stop": ["<|user|>", "<|system|>"],
+        }, timeout=120)
+        resp.raise_for_status()
+        return resp.json().get("content", "").strip()
+    except Exception as e:
+        return f"Error: {e}\nMake sure prima.cpp is running:\n  ~/prima.cpp/llama-server -m <model.gguf> --host 0.0.0.0 --port {port}"
+
+
 def chat_primaclaw(prompt, coordinator_host="localhost", coordinator_port=10000):
-    """Send prompt to Primaclaw swarm."""
+    """Send prompt to Primaclaw coordinator (OpenAI-compatible proxy)."""
     import httpx
     try:
         url = f"http://{coordinator_host}:{coordinator_port}/v1/chat/completions"
@@ -45,38 +65,23 @@ def chat_primaclaw(prompt, coordinator_host="localhost", coordinator_port=10000)
         return f"Error: {e}\nMake sure Primaclaw coordinator is running: python -m src.coordinator"
 
 
-def chat_ollama(prompt, model="qwen2.5:0.5b"):
-    """Send prompt to local Ollama."""
-    import httpx
-    try:
-        url = "http://localhost:11434/api/chat"
-        resp = httpx.post(url, json={
-            "model": model,
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
-            "stream": False,
-            "temperature": 0.7,
-        }, timeout=120)
-        resp.raise_for_status()
-        return resp.json()["message"]["content"]
-    except Exception as e:
-        return f"Error: {e}\nMake sure Ollama is running: ollama serve"
-
-
-def interactive_mode(backend, host, port, model):
+def interactive_mode(backend, host, port, n_predict):
     """Interactive chat loop."""
     print("\n=== Krav Maga Self-Defense Tutor ===")
-    print("Backend:", "Primaclaw" if backend == "primaclaw" else f"Ollama ({model})")
-    print("Type 'quit' to exit, 'plan' for training plan, 'level <name>' for level details")
+    if backend == "primacpp":
+        print(f"Backend: prima.cpp (llama-server at {host}:{port})")
+    elif backend == "primaclaw":
+        print(f"Backend: Primaclaw coordinator ({host}:{port})")
+    print("Commands: 'quit' to exit, 'plan' for training plan, 'level <name>' for level")
     print("Examples: 'How do I escape a front choke?' / 'What are pre-attack indicators?'")
     print()
 
-    if backend == "primaclaw":
+    if backend == "primacpp":
+        chat_fn = lambda p: chat_primacpp(p, host, port, n_predict)
+    elif backend == "primaclaw":
         chat_fn = lambda p: chat_primaclaw(p, host, port)
     else:
-        chat_fn = lambda p: chat_ollama(p, model)
+        chat_fn = lambda p: chat_primacpp(p, host, port, n_predict)
 
     while True:
         try:
@@ -134,11 +139,13 @@ def print_level_detail(level_name):
 def main():
     parser = argparse.ArgumentParser(description="Krav Maga Self-Defense Tutor")
     parser.add_argument("-q", "--question", help="Ask a single question")
-    parser.add_argument("--backend", choices=["primaclaw", "ollama"], default="ollama",
-                        help="Inference backend (default: ollama)")
-    parser.add_argument("--host", default="localhost", help="Primaclaw coordinator host")
-    parser.add_argument("--port", type=int, default=10000, help="Primaclaw coordinator port")
-    parser.add_argument("--model", default="qwen2.5:0.5b", help="Ollama model name")
+    parser.add_argument("--backend", choices=["primacpp", "primaclaw"], default="primacpp",
+                        help="Inference backend: primacpp (llama-server) or primaclaw (coordinator)")
+    parser.add_argument("--host", default="localhost", help="Server host")
+    parser.add_argument("--port", type=int, default=8080,
+                        help="Server port (8080 for prima.cpp, 10000 for coordinator)")
+    parser.add_argument("--n-predict", type=int, default=512,
+                        help="Max tokens to generate (prima.cpp only)")
     parser.add_argument("--level", help="Show training plan for level (white/yellow/orange/green/blue)")
     parser.add_argument("--plan", action="store_true", help="Show full training program")
     args = parser.parse_args()
@@ -155,10 +162,10 @@ def main():
         if args.backend == "primaclaw":
             print(chat_primaclaw(args.question, args.host, args.port))
         else:
-            print(chat_ollama(args.question, args.model))
+            print(chat_primacpp(args.question, args.host, args.port, args.n_predict))
         return
 
-    interactive_mode(args.backend, args.host, args.port, args.model)
+    interactive_mode(args.backend, args.host, args.port, args.n_predict)
 
 
 if __name__ == "__main__":
