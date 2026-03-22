@@ -9,15 +9,46 @@ services:
       - "10001:10001/udp"
     env_file: .env
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   worker:
     build: .
     command: python -m src.worker
     depends_on:
-      - coordinator
+      coordinator:
+        condition: service_healthy
     env_file: .env
     volumes:
-      - /home/m/prima.cpp/models:/models:ro
+      - models:/models:ro
     environment:
       - WORKER_MODEL_PATH=/models/qwen2.5-1.5b-instruct-q4_k_m.gguf
+      - WORKER_UDP_BROADCAST_IP=coordinator
+      - WORKER_RANK=0
     restart: always
+
+  dashboard:
+    build: .
+    command: python -m http.server 8888 --directory /app/dashboard
+    ports:
+      - "8888:8888"
+    depends_on:
+      - coordinator
+    restart: always
+
+  # Efficiency benchmark service (run on demand)
+  benchmark:
+    build: .
+    command: python -m src.efficiency.cli -p "Explain quantum computing in 2 sentences." --format html -o /results/report.html
+    profiles: ["bench"]
+    depends_on:
+      - coordinator
+    volumes:
+      - ./results:/results
+    env_file: .env
+
+volumes:
+  models:

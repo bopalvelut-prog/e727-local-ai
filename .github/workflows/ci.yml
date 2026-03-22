@@ -1,0 +1,31 @@
+name: Primaclaw CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff httpx fastapi
+      - run: ruff check src/ dashboard/
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+      - name: Test imports
+        run: python -c "from src.config import settings; print('Config OK')"
+      - name: Test efficiency module
+        run: python -c "from src.efficiency import format_table, calculate_scores; print('Efficiency module OK')"

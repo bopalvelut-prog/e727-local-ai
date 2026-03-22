@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primaclaw Swarm Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff88; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 20px; font-size: 1.5em; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .card { background: #111; border: 1px solid #00ff8833; border-radius: 8px; padding: 16px; }
+  .card h2 { color: #00ccff; margin-bottom: 10px; font-size: 1.1em; }
+  .stat { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #00ff8822; }
+  .stat:last-child { border: none; }
+  .label { color: #888; }
+  .value { color: #00ff88; font-weight: bold; }
+  .value.warn { color: #ffaa00; }
+  .value.error { color: #ff4444; }
+  .worker-list { list-style: none; }
+  .worker-list li { padding: 8px; margin: 4px 0; background: #0d0d0d; border-radius: 4px; border-left: 3px solid #00ff88; }
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+  .status-dot.online { background: #00ff88; }
+  .status-dot.offline { background: #ff4444; }
+  #log { background: #0d0d0d; padding: 12px; border-radius: 4px; max-height: 200px; overflow-y: auto; font-size: 0.85em; line-height: 1.6; color: #888; }
+  .refresh-btn { background: #00ff8822; color: #00ff88; border: 1px solid #00ff88; padding: 8px 16px; border-radius: 4px; cursor: pointer; float: right; }
+  .refresh-btn:hover { background: #00ff8844; }
+  .benchmark-form { display: flex; gap: 8px; margin-top: 12px; }
+  .benchmark-form input { flex: 1; background: #0d0d0d; border: 1px solid #00ff8833; color: #00ff88; padding: 8px; border-radius: 4px; font-family: inherit; }
+  .benchmark-form button { background: #00ff8822; color: #00ff88; border: 1px solid #00ff88; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>Primaclaw Swarm Dashboard</h1>
+<button class="refresh-btn" onclick="refresh()">Refresh</button>
+<div class="grid">
+  <div class="card">
+    <h2>Swarm Status</h2>
+    <div class="stat"><span class="label">Coordinator</span><span class="value" id="coord-status">—</span></div>
+    <div class="stat"><span class="label">Active Workers</span><span class="value" id="worker-count">0</span></div>
+    <div class="stat"><span class="label">Uptime</span><span class="value" id="uptime">—</span></div>
+    <div class="stat"><span class="label">Gateway</span><span class="value" id="gateway">—</span></div>
+  </div>
+  <div class="card">
+    <h2>Workers</h2>
+    <ul class="worker-list" id="worker-list">
+      <li>No workers connected</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Benchmark</h2>
+    <div class="stat"><span class="label">Last Tokens/s</span><span class="value" id="tok-sec">—</span></div>
+    <div class="stat"><span class="label">Security Score</span><span class="value" id="sec-score">—</span></div>
+    <div class="stat"><span class="label">Quality Score</span><span class="value" id="qual-score">—</span></div>
+    <div class="benchmark-form">
+      <input type="text" id="bench-prompt" placeholder="Enter benchmark prompt..." value="Explain quantum computing in 2 sentences.">
+      <button onclick="runBenchmark()">Run</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Model Info</h2>
+    <div class="stat"><span class="label">Active Model</span><span class="value" id="model-name">—</span></div>
+    <div class="stat"><span class="label">Quantization</span><span class="value" id="model-quant">—</span></div>
+    <div class="stat"><span class="label">Context Size</span><span class="value" id="ctx-size">—</span></div>
+    <div class="stat"><span class="label">Recommendation</span><span class="value" id="recommend">—</span></div>
+  </div>
+</div>
+<div class="card" style="margin-top: 16px;">
+  <h2>Event Log</h2>
+  <div id="log">Dashboard loaded. Waiting for data...</div>
+</div>
+
+<script>
+const API = window.location.origin;
+let startTime = Date.now();
+
+function log(msg) {
+  const el = document.getElementById('log');
+  const time = new Date().toLocaleTimeString();
+  el.innerHTML += `[${time}] ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+async function refresh() {
+  try {
+    const resp = await fetch(API + '/');
+    const data = await resp.json();
+    document.getElementById('coord-status').textContent = 'Online';
+    document.getElementById('coord-status').className = 'value';
+    document.getElementById('worker-count').textContent = data.swarm.size;
+    document.getElementById('gateway').textContent = data.gateway;
+    document.getElementById('uptime').textContent = formatUptime(Date.now() - startTime);
+
+    const list = document.getElementById('worker-list');
+    if (data.swarm.workers.length > 0) {
+      list.innerHTML = data.swarm.workers.map(w =>
+        `<li><span class="status-dot online"></span>${w}</li>`
+      ).join('');
+    } else {
+      list.innerHTML = '<li><span class="status-dot offline"></span>No workers connected</li>';
+    }
+    log('Refreshed swarm status.');
+  } catch (e) {
+    document.getElementById('coord-status').textContent = 'Offline';
+    document.getElementById('coord-status').className = 'value error';
+    log('Error: ' + e.message);
+  }
+}
+
+function formatUptime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  return `${h}h ${m % 60}m ${s % 60}s`;
+}
+
+async function runBenchmark() {
+  const prompt = document.getElementById('bench-prompt').value;
+  log('Running benchmark: ' + prompt);
+  try {
+    const resp = await fetch(API + '/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'primaclaw-swarm',
+        messages: [{ role: 'user', content: prompt }],
+        stream: false
+      })
+    });
+    const data = await resp.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    const tokens = Math.ceil(content.length / 4);
+    const tokSec = (tokens / 5).toFixed(1);
+    document.getElementById('tok-sec').textContent = tokSec + ' t/s';
+    log('Response: ' + content.substring(0, 100) + '...');
+  } catch (e) {
+    log('Benchmark error: ' + e.message);
+  }
+}
+
+// Auto-refresh every 10 seconds
+setInterval(refresh, 10000);
+refresh();
+</script>
+</body>
+</html>
