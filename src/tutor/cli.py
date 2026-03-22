@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Krav Maga Self-Defense Tutor — CLI interface.
+Krav Maga Self-Defense Tutor -- CLI interface.
 Uses Primaclaw swarm or local Ollama as backend.
 
 Usage:
@@ -10,11 +10,17 @@ Usage:
   python -m src.tutor.cli --plan                   # Full training program
 """
 
-import argparse
 import sys
 import os
+import io
+
+# Force UTF-8 output on Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+import argparse
 
 from src.tutor import SYSTEM_PROMPT, get_training_plan, TRAINING_LEVELS
 
@@ -108,7 +114,7 @@ def print_training_plan():
         print(f"  Focus: {level['focus']}")
         print(f"  Exercises:")
         for ex in level['exercises']:
-            print(f"    • {ex}")
+            print(f"    - {ex}")
     print()
 
 
