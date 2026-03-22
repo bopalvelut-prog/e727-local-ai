@@ -1,0 +1,14 @@
+[Unit]
+Description=Primaclaw Dashboard
+After=primaclaw-coordinator.service
+
+[Service]
+Type=simple
+User=primaclaw
+Group=primaclaw
+WorkingDirectory=/opt/primaclaw
+ExecStart=/opt/primaclaw/venv/bin/python -m http.server 8888 --directory dashboard
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

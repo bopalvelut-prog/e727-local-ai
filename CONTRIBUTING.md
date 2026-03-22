@@ -1,27 +1,52 @@
 # Contributing to Primaclaw
 
-We welcome contributions! Please follow these guidelines to ensure a smooth collaboration.
+Thanks for wanting to help! Here's how to get started.
 
-## GitHub Flow
-1. Fork the repository.
-2. Create a feature branch from `main` (`feat/your-feature-name`).
-3. Commit your changes using **Conventional Commits**.
-4. Open a Pull Request and describe your changes.
-5. Wait for a code review and address any feedback.
+## What we need help with
 
-## Conventional Commits
-Please use the following prefixes for your commit messages:
-- `feat:` for new features.
-- `fix:` for bug fixes.
-- `docs:` for documentation updates.
-- `test:` for adding or updating tests.
-- `refactor:` for code changes that neither fix a bug nor add a feature.
+### Good first issues
+- Add more model metadata (origin, license) to the efficiency module
+- Test on Raspberry Pi 4/5 and report results
+- Improve the dashboard UI
+- Add TLS support for the coordinator
 
-## Testing
-Before submitting a PR, ensure all tests pass:
+### Bigger projects
+- Support for llama.cpp workers (not just Ollama)
+- Automatic model selection based on hardware benchmarks
+- WebRTC-based P2P communication between workers
+- Kubernetes/Helm chart for cloud deployment
+
+## How to contribute
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b my-feature`
+3. Make your changes
+4. Run linting: `ruff check src/`
+5. Test your changes locally
+6. Submit a PR with a clear description
+
+## Adding your hardware
+
+The best contribution right now is testing on your old hardware. Run the benchmark:
+
 ```bash
-pytest
+python -m src.efficiency.cli -p "Hello" --auto --json -o my_hardware.json
 ```
 
----
-*Thank you for helping us build a better AI swarm!*
+Open a PR adding your results to [HARDWARE.md](HARDWARE.md).
+
+## Code style
+
+- Python 3.9+ compatible
+- Use type hints where possible
+- Keep functions small and testable
+- No heavy dependencies (we target old hardware)
+
+## Community
+
+- [GitHub Discussions](https://github.com/bopalvelut-prog/e727-local-ai/discussions)
+- [HARDWARE.md](HARDWARE.md) — community-tested hardware list
+
+## License
+
+By contributing, you agree your code will be MIT licensed.

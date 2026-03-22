@@ -1,8 +1,24 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "primaclaw"
-version = "0.1.0"
-description = "Distributed AI Swarm Management for Low-Resource Home Clusters."
-authors = [{ name = "bopalvelut-prog developers" }]
+version = "1.0.0"
+description = "Turn e-waste into an OpenAI-compatible distributed AI cluster"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [{name = "bopalvelut-prog", email = "bopalvelut@gmail.com"}]
+keywords = ["ai", "distributed-computing", "ollama", "llama-cpp", "old-hardware", "swarm", "openai-compatible"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: System :: Distributed Computing",
+]
 dependencies = [
     "fastapi>=0.100.0",
     "uvicorn>=0.20.0",
@@ -16,12 +32,26 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
-    "httpx>=0.24.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "mypy>=1.5.0",
+    "ruff>=0.4.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/bopalvelut-prog/e727-local-ai"
+Documentation = "https://github.com/bopalvelut-prog/e727-local-ai#readme"
+Repository = "https://github.com/bopalvelut-prog/e727-local-ai"
+Issues = "https://github.com/bopalvelut-prog/e727-local-ai/issues"
+"Hardware Compatibility" = "https://github.com/bopalvelut-prog/e727-local-ai/blob/main/HARDWARE.md"
+
+[project.scripts]
+primaclaw-coordinator = "src.coordinator:main"
+primaclaw-worker = "src.worker:main"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 120

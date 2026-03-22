@@ -1,0 +1,19 @@
+[Unit]
+Description=Primaclaw Worker (AI Swarm Node)
+After=network-online.target primaclaw-coordinator.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=primaclaw
+Group=primaclaw
+WorkingDirectory=/opt/primaclaw
+ExecStart=/opt/primaclaw/venv/bin/python -m src.worker
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+Environment=WORKER_UDP_BROADCAST_IP=192.168.1.255
+Environment=WORKER_RANK=0
+
+[Install]
+WantedBy=multi-user.target
