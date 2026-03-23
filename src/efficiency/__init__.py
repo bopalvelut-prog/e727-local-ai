@@ -1,6 +1,6 @@
 """
 Primaclaw Model Efficiency Module
-Compares Ollama/llama.cpp models by speed, quality, size, and security.
+Compares llama.cpp/prima.cpp models by speed, quality, size, and security.
 """
 
 import json
@@ -18,6 +18,7 @@ except ImportError:
 def list_ollama_models(api_base="http://localhost:11434/api"):
     """List available Ollama models."""
     import httpx
+
     try:
         resp = httpx.get(f"{api_base}/tags")
         resp.raise_for_status()
@@ -30,11 +31,10 @@ def list_ollama_models(api_base="http://localhost:11434/api"):
 def chat_ollama(model_name, prompt, api_base="http://localhost:11434/api"):
     """Send prompt to Ollama, return response + metrics."""
     import httpx
+
     try:
         start = time.time()
-        resp = httpx.post(f"{api_base}/generate", json={
-            "model": model_name, "prompt": prompt, "stream": False
-        })
+        resp = httpx.post(f"{api_base}/generate", json={"model": model_name, "prompt": prompt, "stream": False})
         resp.raise_for_status()
         elapsed = time.time() - start
         data = resp.json()
@@ -56,13 +56,17 @@ def chat_ollama(model_name, prompt, api_base="http://localhost:11434/api"):
 def chat_llamacpp(model_name, prompt, host="localhost", port=8080):
     """Send prompt to llama.cpp server directly."""
     import httpx
+
     try:
         start = time.time()
-        resp = httpx.post(f"http://{host}:{port}/completion", json={
-            "prompt": prompt,
-            "n_predict": 256,
-            "temperature": 0.7,
-        })
+        resp = httpx.post(
+            f"http://{host}:{port}/completion",
+            json={
+                "prompt": prompt,
+                "n_predict": 256,
+                "temperature": 0.7,
+            },
+        )
         resp.raise_for_status()
         elapsed = time.time() - start
         data = resp.json()
@@ -133,12 +137,14 @@ def calculate_scores(results, w_ts=0.3, w_is=0.3, w_ms=0.2, w_sec=0.2):
         combined = (norm_ts * w_ts) + (norm_is * w_is) + (norm_ms * w_ms) + (norm_sec * w_sec)
         meta = get_model_metadata(r["model_name"])
 
-        scored.append({
-            **r,
-            "combined_score": combined,
-            "origin": meta["origin"],
-            "license": meta["license"],
-        })
+        scored.append(
+            {
+                **r,
+                "combined_score": combined,
+                "origin": meta["origin"],
+                "license": meta["license"],
+            }
+        )
     return sorted(scored, key=lambda x: x["combined_score"], reverse=True)
 
 
@@ -179,10 +185,10 @@ def format_html(results, prompt=""):
         ts = f"{r['tokens_per_second']:.1f}" if r.get("tokens_per_second") else "N/A"
         sec = f"{r.get('security_score', 0):.1f}"
         score = f"{r['combined_score']:.2f}"
-        cls = "good" if r['combined_score'] > 0.6 else ("mid" if r['combined_score'] > 0.3 else "bad")
+        cls = "good" if r["combined_score"] > 0.6 else ("mid" if r["combined_score"] > 0.3 else "bad")
         rows += f"""<tr>
-          <td>{r['model_name']}</td><td>{ts}</td><td>{r['origin']}</td>
-          <td>{r['license']}</td><td>{sec}</td><td class="{cls}">{score}</td>
+          <td>{r["model_name"]}</td><td>{ts}</td><td>{r["origin"]}</td>
+          <td>{r["license"]}</td><td>{sec}</td><td class="{cls}">{score}</td>
         </tr>\n"""
 
     return f"""<!DOCTYPE html>

@@ -10,12 +10,18 @@ import argparse
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from src.efficiency import (
-    list_ollama_models, chat_ollama, chat_llamacpp,
-    security_test, calculate_scores,
-    format_table, format_json, format_markdown, format_html
+    list_ollama_models,
+    chat_ollama,
+    chat_llamacpp,
+    security_test,
+    calculate_scores,
+    format_table,
+    format_json,
+    format_markdown,
+    format_html,
 )
 
 
@@ -24,7 +30,7 @@ def main():
     parser.add_argument("-p", "--prompt", required=True, help="Benchmark prompt")
     parser.add_argument("--format", choices=["table", "json", "md", "html"], default="table")
     parser.add_argument("--output", "-o", help="Output file (for html/json/md)")
-    parser.add_argument("--backend", choices=["ollama", "llamacpp"], default="ollama")
+    parser.add_argument("--backend", choices=["ollama", "llamacpp"], default="llamacpp")
     parser.add_argument("--llamacpp-host", default="localhost")
     parser.add_argument("--llamacpp-port", type=int, default=8080)
     parser.add_argument("--w-ts", type=float, default=0.3, help="Token speed weight")
@@ -67,13 +73,15 @@ def main():
         resp_len = len(metrics.get("response", ""))
         auto_quality = min(5.0, max(1.0, resp_len / 100))
 
-        results.append({
-            "model_name": name,
-            "tokens_per_second": metrics["tokens_per_second"],
-            "intelligency_score": auto_quality,
-            "security_score": sec_score,
-            "model_size": model.get("size", 0),
-        })
+        results.append(
+            {
+                "model_name": name,
+                "tokens_per_second": metrics["tokens_per_second"],
+                "intelligency_score": auto_quality,
+                "security_score": sec_score,
+                "model_size": model.get("size", 0),
+            }
+        )
 
     scored = calculate_scores(results, args.w_ts, args.w_is, args.w_ms, args.w_sec)
 

@@ -38,17 +38,18 @@ pip install -e .
 python -m src.coordinator
 ```
 
-## Running Ollama on Alpine
+## Running prima.cpp on Alpine
 
 ```bash
-# Install Ollama
-curl -fsSL https://ollama.com/install.sh | sh
+# Build prima.cpp (or llama.cpp)
+git clone https://github.com/bopalvelut-prog/prima.cpp
+cd prima.cpp && make -j$(nproc)
 
-# Pull a small model (good for old hardware)
-ollama pull qwen2.5:0.5b
+# Download a GGUF model (e.g., Qwen2.5 0.5B)
+# Place your .gguf file in models/
 
-# Start Ollama server
-ollama serve &
+# Start the server
+./llama-server -m models/qwen2.5-0.5b.gguf --port 8080 --host 0.0.0.0
 ```
 
 ## Running as Worker Node

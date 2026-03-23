@@ -86,8 +86,8 @@ running on hardware worth less than a single month of GPT-4 API usage.
 
 ## Getting Started
 
-1. Install [Ollama](https://ollama.com) on each machine
-2. Pull a small model: `ollama pull qwen2.5:0.5b`
+1. Install [prima.cpp](https://github.com/bopalvelut-prog/prima.cpp) or [llama.cpp](https://github.com/ggerganov/llama.cpp) on each machine
+2. Start the server with a small model: `llama-server -m qwen2.5-0.5b.gguf --port 8080`
 3. Clone the repos and run
 4. Let AutoResearch optimize overnight
 
