@@ -168,8 +168,8 @@ def format_json(results):
 
 def format_markdown(results):
     lines = []
-    lines.append(f"| Model | Tokens/s | Origin | License | Security | Score |")
-    lines.append(f"|-------|----------|--------|---------|----------|-------|")
+    lines.append("| Model | Tokens/s | Origin | License | Security | Score |")
+    lines.append("|-------|----------|--------|---------|----------|-------|")
     for r in results:
         ts = f"{r['tokens_per_second']:.1f}" if r.get("tokens_per_second") else "N/A"
         sec = f"{r.get('security_score', 0):.1f}"

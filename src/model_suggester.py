@@ -3,7 +3,6 @@
 Primaclaw Model Suggester & Downloader
 """
 
-import requests
 import argparse
 import subprocess
 import os
@@ -152,7 +151,7 @@ def main():
     
     if args.suggest:
         matches = suggest_model(target_size_gb=args.size, target_quality=args.quality)
-        print(f"\nDownload with: --download N")
+        print("\nDownload with: --download N")
         return
     
     if args.download:

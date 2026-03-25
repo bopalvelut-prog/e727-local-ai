@@ -55,3 +55,5 @@ asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 120
+
+ignore = ["E402", "E722", "E731", "F401"]

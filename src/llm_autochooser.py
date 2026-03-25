@@ -6,8 +6,7 @@ Automatically selects the best model based on task type and complexity.
 
 import requests
 import json
-import sys
-from typing import Optional, Dict, List
+from typing import Dict, List
 
 SERVERS = {
     "fast": {"port": 8085, "model": "Qwen2.5-1.5B-Instruct", "size": "0.9GB", "speed": "1.7 tok/s"},

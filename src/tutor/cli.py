@@ -116,7 +116,7 @@ def print_training_plan():
     for key, level in TRAINING_LEVELS.items():
         print(f"\n[{key.upper()}] {level['name']}")
         print(f"  Focus: {level['focus']}")
-        print(f"  Exercises:")
+        print("  Exercises:")
         for ex in level['exercises']:
             print(f"    - {ex}")
     print()
@@ -129,7 +129,7 @@ def print_level_detail(level_name):
     print(f"  {level['name']}")
     print(f"{'=' * 60}")
     print(f"  Focus: {level['focus']}")
-    print(f"\n  Training Exercises:")
+    print("\n  Training Exercises:")
     for i, ex in enumerate(level['exercises'], 1):
         print(f"    {i}. {ex}")
     print()
