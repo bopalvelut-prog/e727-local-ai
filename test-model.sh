@@ -27,7 +27,7 @@ pkill -f "llama-server.*--port $PORT" 2>/dev/null
 sleep 1
 
 # Start server
-/home/ma/prima.cpp/llama-server -m "$MODEL_PATH" --port $PORT &
+/home/m/prima.cpp/llama-server -m "$MODEL_PATH" --port $PORT &
 echo "Waiting for model to load..."
 sleep 60
 
